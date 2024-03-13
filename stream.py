@@ -2,6 +2,30 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
+
+from PIL import Image
+import base64
+from io import BytesIO
+
+# Загрузить изображение из файла
+img = Image.open('_-fotor.jpg')
+
+buffered = BytesIO()
+img.save(buffered, format="JPEG")
+img_str = base64.b64encode(buffered.getvalue()).decode()
+
+
+st.markdown(f"""
+    <style>
+    .stApp {{
+        background-image: url(data:image/jpg;base64,{img_str});
+        background-size: cover;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+
+
 df = pd.read_csv('movies.csv')
 random_digits = np.random.choice(len(df), size=5, replace=False)
 
@@ -9,8 +33,7 @@ random_digits = np.random.choice(len(df), size=5, replace=False)
 
 # Создать текстовое поле для ввода названия фильма
 title = st.text_input('Что хотите посмотреть сегодня?')
-
-if len(title) != 0:
+if st.button('Подобрать фильм'):
     st.header('Я пока что в разработке 😬😬😬😬')
 
 if st.button('Выбрать случайно'):
