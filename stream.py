@@ -1,17 +1,32 @@
 import streamlit as st 
-
+import numpy as np
 import pandas as pd
 
-df = pd.read_csv('movies.csv')
+df = pd.read_csv('random_film_streamlit/movies.csv')
+random_digits = np.random.choice(len(df), size=5, replace=False)
 
 
-st.image('http://kinogo.uk//uploads/mini/full/8a/afd93f08b408c6faf115c0a09732f2.jpg')
 
-st.image('https://www.ixbt.com/img/n1/news/2022/2/6/Instagram-Direct-Message_large.jpg')
+# Создать текстовое поле для ввода названия фильма
+title = st.text_input('Что хотите посмотреть сегодня?')
 
-title = st.text_input('Что хотите посмотреть сегодня? ')
-st.write(title)
+if len(title) != 0:
+    st.header('Я пока что в разработке 😬😬😬😬')
 
-if st.button('Say hello'):
-    st.write('Why hello there')
-    st.image(df['img_url'][0])
+if st.button('Выбрать случайно'):
+    for i in random_digits:
+        st.title('Название фильма:')
+        st.header(df['movie_title'][i])
+        st.image('http://'+ df['img_url'][i])
+        st.title('Описание:')
+        st.write(df['description'][i])
+        st.title('Жанр:')
+        st.write("Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i] ) 
+        st.title('Оценка')
+        imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
+        kinopoisk = 'Нет оценки' if df['kinopoisk'][i] == 0 else str(df['kinopoisk'][i])
+        st.write(f'Рейтинг imdb: {imb}')
+        st.write(f'Рейтинг кинопоиск: {kinopoisk}')
+        st.title('-'*45)
+
+    
