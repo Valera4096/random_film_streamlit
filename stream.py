@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
-df = pd.read_csv('random_film_streamlit/movies.csv')
+df = pd.read_csv('movies.csv')
 random_digits = np.random.choice(len(df), size=5, replace=False)
 
 
