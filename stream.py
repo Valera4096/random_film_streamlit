@@ -120,7 +120,7 @@ if st.toggle('Фильтр'):
             # добавляем вектора вложений в индекс Faiss
             index.add(filterd_embeddings)
     elif len(year) ==1:
-        df = df[df['year'] >= year[0]]
+        df = df[df['year'] >= year[0]].reset_index(drop= True)
         
         if len(df) == 0:
             st.title('По заданым параметрам ничего не найдено ((') 
