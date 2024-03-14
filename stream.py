@@ -33,6 +33,24 @@ def find_similar_movies(user_input, top_n=5):
     distances, indices = index.search(user_input, top_n)
     return list(indices[0])
 
+#Функция отображения результатов подбора
+def display_movie(i):
+    st.title('Название фильма:')
+    st.header(df['movie_title'][i])
+    st.subheader('Год: ' + str(df['year'][i]))
+    st.image('http://'+ df['img_url'][i])
+    st.title('Описание:')
+    st.write(df['description'][i])
+    st.title('Жанр:')
+    st.write("Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i] ) 
+    st.title('Оценка')
+    imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
+    kinopoisk = 'Нет оценки' if df['kinopoisk'][i] == 0 else str(df['kinopoisk'][i])
+    st.write(f'Рейтинг imdb: {imb}')
+    st.write(f'Рейтинг кинопоиск: {kinopoisk}')
+    st.title('-'*45)
+
+
 # Загрузить изображение из файла
 img = Image.open('_-fotor.jpg')
 buffered = BytesIO()
@@ -63,12 +81,16 @@ if st.toggle('Фильтр'):
 
 # фильтруем DataFrame
     if len(options) != 0:
+        
         df = df[df['genres'].apply(lambda x: target_set.issubset(set(x.replace(' ','').split(','))))].reset_index()
-        embeddings = model.encode(df["description"])
-        index = faiss.IndexFlatIP(embeddings.shape[1])
-        index.add(embeddings)    
+        if len(df) == 0:
+            st.title('По заданым параметрам ничего не найдено ((')
+        else:  
+            embeddings = model.encode(df["description"])
+            index = faiss.IndexFlatIP(embeddings.shape[1])
+            index.add(embeddings)    
     
-    years = list(range(1964, 2024))  # Список всех возможных лет
+    years = list(range(1937, 2024))  # Список всех возможных лет
     year = sorted(st.multiselect('Выберите год:', years, max_selections= 2))
     
     if len(year) == 2:
@@ -103,20 +125,7 @@ if len(df) !=0 :
                 st.title('Больше рекомендаций нет, уменьшите количество рекомендаций или измените фильтры')
                 break
             else:
-                st.title('Название фильма:')
-                st.header(df['movie_title'][i])
-                st.subheader('Год: ' + str(df['year'][i]))
-                st.image('http://'+ df['img_url'][i])
-                st.title('Описание:')
-                st.write(df['description'][i])
-                st.title('Жанр:')
-                st.write("Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i] ) 
-                st.title('Оценка')
-                imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
-                kinopoisk = 'Нет оценки' if df['kinopoisk'][i] == 0 else str(df['kinopoisk'][i])
-                st.write(f'Рейтинг imdb: {imb}')
-                st.write(f'Рейтинг кинопоиск: {kinopoisk}')
-                st.title('-'*45)
+                display_movie(i)
 
     if st.button('Выбрать случайно'):
         size = 5
@@ -126,18 +135,6 @@ if len(df) !=0 :
         if size == 0:
             st.header('Невозможно сделать случайный выбор, т.к по таким параметрам фильмы не найдены')
         for i in random_digits:
-            st.title('Название фильма:')
-            st.header(df['movie_title'][i])
-            st.subheader('Год: ' + str(df['year'][i]))
-            st.image('http://'+ df['img_url'][i])
-            st.title('Описание:')
-            st.write(df['description'][i])
-            st.title('Жанр:')
-            st.write("Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i] ) 
-            st.title('Оценка')
-            imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
-            kinopoisk = 'Нет оценки' if df['kinopoisk'][i] == 0 else str(df['kinopoisk'][i])
-            st.write(f'Рейтинг imdb: {imb}')
-            st.write(f'Рейтинг кинопоиск: {kinopoisk}')
-            st.title('-'*45)
-   
+            display_movie(i)
+            
+            
