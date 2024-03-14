@@ -9,7 +9,9 @@ from io import BytesIO
 from sentence_transformers import SentenceTransformer, util
 import faiss
 
-st.title('Умный поиск фильмов')
+st.markdown(f'<p style="background-color: white; color: black; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
+
+
 
 df = pd.read_csv('movies.csv')
 
@@ -34,21 +36,44 @@ def find_similar_movies(user_input, top_n=5):
     return list(indices[0])
 
 #Функция отображения результатов подбора
-def display_movie(i):
-    st.title('Название фильма:')
-    st.header(df['movie_title'][i])
-    st.subheader('Год: ' + str(df['year'][i]))
-    st.image('http://'+ df['img_url'][i])
-    st.title('Описание:')
-    st.write(df['description'][i])
-    st.title('Жанр:')
-    st.write("Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i] ) 
-    st.title('Оценка')
+# def display_movie(i):
+#     st.title('Название фильма:')
+#     st.header(df['movie_title'][i])
+#     st.subheader('Год: ' + str(df['year'][i]))
+#     st.image('http://'+ df['img_url'][i])
+#     st.title('Описание:')
+#     st.write(df['description'][i])
+#     st.title('Жанр:')
+#     st.write("Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i] ) 
+#     st.title('Оценка')
+#     imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
+#     kinopoisk = 'Нет оценки' if df['kinopoisk'][i] == 0 else str(df['kinopoisk'][i])
+#     st.write(f'Рейтинг imdb: {imb}')
+#     st.write(f'Рейтинг кинопоиск: {kinopoisk}')
+#     st.title('-'*45)
+
+
+def display_movie(i):    
+    movie_titl = df['movie_title'][i]
+    year_movie = str(df['year'][i])
+    descrip_movie = df['description'][i]
+    imges = 'http://'+ df['img_url'][i]
+    genre_movie = "Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i]
     imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
     kinopoisk = 'Нет оценки' if df['kinopoisk'][i] == 0 else str(df['kinopoisk'][i])
-    st.write(f'Рейтинг imdb: {imb}')
-    st.write(f'Рейтинг кинопоиск: {kinopoisk}')
-    st.title('-'*45)
+    end = '_'*28
+    write_movie  = f'''<div style="background-color:white; color: black; font-size: 50px; padding: 15px; margin-bottom: 0px;>
+        <p style= "font-size: 40px; font-weight: bold; text-align:">Название фильма:</p>
+        <p style= "font-size: 35px; font-weight: bold; text-align:">{movie_titl}</p>
+        <img src="{imges}" alt="Фото фильма" width="250" height="400">
+        <p style="font-size: 20px; font-weight: bold; text-align:">Год: {year_movie}</p>
+        <p style="font-size: 20px; font-weight: bold; text-align:">Описание: </p>
+        <p style="font-size: 15px; font-weight: bold; text-align:">{descrip_movie}</p>
+        <p style="font-size: 20px; font-weight: bold; text-align:">Жанр: {genre_movie}</p>
+        <p style="font-size: 20px; font-weight: bold; text-align:">Оценка:</p>
+        <p style="font-size: 20px; font-weight: bold; text-align:">Imd: {imb} , Кинопоиск: {kinopoisk}</p>
+    </div>'''
+    st.markdown(write_movie, unsafe_allow_html=True)
 
 
 # Загрузить изображение из файла
@@ -66,7 +91,6 @@ st.markdown(f"""
     }}
     </style>
     """, unsafe_allow_html=True)
-
 
 
 #Фильтры
