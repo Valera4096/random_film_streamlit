@@ -9,9 +9,9 @@ from io import BytesIO
 from sentence_transformers import SentenceTransformer
 import faiss
 
-st.markdown(f'<p style="background-color:  grey ; color: white ; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
+st.markdown(f'<p style="background-color: #262730; color: white ; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
 
-df = pd.read_csv("movies.csv")
+df = pd.read_csv("/home/valera/ds_bootcamp/ds-phase-2/11-nn-ext/progect/movies_data.csv")
 
 @st.cache_resource
 def load_model():
@@ -20,12 +20,12 @@ model = load_model()
         
 @st.cache_resource
 def load_embeddings():
-    return np.load('embeding.npy')
+    return np.load('/home/valera/ds_bootcamp/ds-phase-2/11-nn-ext/progect/embeding.npy')
 embeddings = load_embeddings()
 
 
 index = faiss.IndexFlatIP(embeddings.shape[1])
-index.add(np.array(embeddings))
+index.add(embeddings)
 
 
 # Функция для поиска фильмов по сходству
@@ -43,22 +43,29 @@ def display_movie(i):
     imges = df['img_url'][i]
     genre_movie = "Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i]
     imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
-    end = '_'*28
-    write_movie  = f'''<div style="background-color:white; color: black; font-size: 35px; padding: 15px; margin-bottom: 0px;>
-        <p style= "font-size: 25px; font-weight: bold; text-align:">Название фильма:</p>
-        <p style= "font-size: 35px; font-weight: bold; text-align:">{movie_titl}</p>
-        <img src="{imges}"width="250" height="400">
-        <p style="font-size: 20px; font-weight: bold; text-align:">Год: {year_movie}</p>
-        <p style="font-size: 20px; font-weight: bold; text-align:">Описание: </p>
-        <p style="font-size: 15px; font-weight: bold; text-align:">{descrip_movie}</p>
-        <p style="font-size: 20px; font-weight: bold; text-align:">Жанр: {genre_movie}</p>
-        <p style="font-size: 20px; font-weight: bold; text-align:">Оценка:</p>
-    </div>'''
+    end = '_'*37
+    write_movie = f'''
+    <div style="background-color: white; color: black; font-size: 35px; padding: 15px; margin-bottom: 0px; display: flex;">
+        <div style="margin-right: 20px;">
+            <img src="{imges}" width="200" height="350">
+        </div>
+        <div style="text-align: left;">
+            <p style="font-size: 25px; font-weight: bold;">Название фильма:</p>
+            <p style="font-size: 30px; font-weight: bold;">{movie_titl}</p>
+            <p style="font-size: 20px; font-weight: bold;">Год: {year_movie}</p>
+            <p style="font-size: 20px; font-weight: bold;">Описание:</p>
+            <p style="font-size: 15px; font-weight: bold;">{descrip_movie}</p>
+            <p style="font-size: 20px; font-weight: bold;">Жанр: {genre_movie}</p>
+            <p style="font-size: 20px; font-weight: bold;">Оценка: {imb}</p>
+            <p style="font-size: 20px; font-weight: bold;">{end}</p>
+        </div>
+    </div>
+    '''
     st.markdown(write_movie, unsafe_allow_html=True)
 
 
 # Загрузить изображение из файла
-img = Image.open('_-fotor.jpg')
+img = Image.open('/home/valera/ds_bootcamp/ds-phase-2/11-nn-ext/progect/_-fotor.jpg')
 buffered = BytesIO()
 img.save(buffered, format="JPEG")
 img_str = base64.b64encode(buffered.getvalue()).decode()
@@ -75,7 +82,7 @@ st.markdown(f"""
 
 
 #Фильтры
-if st.toggle('Фильтр'):
+if st.sidebar.toggle('Фильтр'):
     options = st.sidebar.multiselect(
         'Выберите жанры',
         ['триллер','боевик','драма','комедия','мелодрама','комедия','детектив','криминал','боевик',
@@ -100,16 +107,11 @@ if st.toggle('Фильтр'):
             index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
             # добавляем вектора вложений в индекс Faiss
             index.add(filterd_embeddings)
-            
-            
+                   
     st.sidebar.header('Выбор дат')        
     year_min = st.sidebar.slider("Выбор минимального года:", min_value=1937, max_value=2022, value=2015)
     year_max = st.sidebar.slider("Выбор максимального года:", min_value=year_min, max_value=2024, value=2020)
     
-    # years = list(range(1937, 2024))  # Список всех возможных лет
-    # year = sorted(st.multiselect('Выберите год:', years, max_selections= 2))
-    
-#    if len(year) == 2:
     df = df[(df['year'] >= year_min) & (df['year'] <= year_max)].reset_index(drop= True)
     if len(df) == 0:
         st.title('По заданым параметрам ничего не найдено ((')
@@ -119,24 +121,11 @@ if st.toggle('Фильтр'):
         index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
         # добавляем вектора вложений в индекс Faiss
         index.add(filterd_embeddings)
-#    elif len(year) ==1:
-        # df = df[df['year'] >= year[0]].reset_index(drop= True)
-        
-        # if len(df) == 0:
-        #     st.title('По заданым параметрам ничего не найдено ((') 
-        # else:  
-        #     filterd_embeddings = embeddings[np.array(df.index)]  
-        #     # создаем индекс Faiss
-        #     index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
-        #     # добавляем вектора вложений в индекс Faiss
-        #     index.add(filterd_embeddings)
-
-
 
 if len(df) !=0 :
     # Создать текстовое поле для ввода названия фильма
     title = st.text_input('Что хотите посмотреть сегодня?')
-    Top_K = st.slider('Количество рекомендаций?', 1, 10, 3)
+    Top_K = st.sidebar.slider('Количество рекомендаций?', 1, 10, 3 )
     
     if st.button('Подобрать фильм'):
         # Использование функции
@@ -157,7 +146,4 @@ if len(df) !=0 :
             st.header('Невозможно сделать случайный выбор, т.к по таким параметрам фильмы не найдены')
         for i in random_digits:
             display_movie(i)
-            
-            
-
-
+            st.markdown(f'<p style="text-align: center;"></p>', unsafe_allow_html=True)
