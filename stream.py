@@ -57,21 +57,19 @@ def display_movie(i):
     movie_titl = df['movie_title'][i]
     year_movie = str(df['year'][i])
     descrip_movie = df['description'][i]
-    imges = 'http://'+ df['img_url'][i]
+    imges = df['img_url'][i]
     genre_movie = "Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i]
     imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
-    kinopoisk = 'Нет оценки' if df['kinopoisk'][i] == 0 else str(df['kinopoisk'][i])
     end = '_'*28
     write_movie  = f'''<div style="background-color:white; color: black; font-size: 50px; padding: 15px; margin-bottom: 0px;>
         <p style= "font-size: 40px; font-weight: bold; text-align:">Название фильма:</p>
         <p style= "font-size: 35px; font-weight: bold; text-align:">{movie_titl}</p>
-        <img src="{imges}" alt="Фото фильма" width="250" height="400">
+        <img src="{imges}"width="250" height="400">
         <p style="font-size: 20px; font-weight: bold; text-align:">Год: {year_movie}</p>
         <p style="font-size: 20px; font-weight: bold; text-align:">Описание: </p>
         <p style="font-size: 15px; font-weight: bold; text-align:">{descrip_movie}</p>
         <p style="font-size: 20px; font-weight: bold; text-align:">Жанр: {genre_movie}</p>
         <p style="font-size: 20px; font-weight: bold; text-align:">Оценка:</p>
-        <p style="font-size: 20px; font-weight: bold; text-align:">Imd: {imb} , Кинопоиск: {kinopoisk}</p>
     </div>'''
     st.markdown(write_movie, unsafe_allow_html=True)
 
@@ -93,47 +91,47 @@ st.markdown(f"""
     """, unsafe_allow_html=True)
 
 
-#Фильтры
-if st.toggle('Фильтр'):
-    options = st.multiselect(
-        'Выберите жанры',
-        ['Боевик','Приключения','Фэнтези','Драма','Фантастика','Криминал','Комедия',
-        'Триллер','Семейные','Детектив','Ужасы','История','Документальный',
-        'Мюзикл','Биография','Военный','Спорт','Вестерн','Сериалы','Мультфильмы'])
-    # Добавить selectbox для выбора конкретного года
-    target_set = set(options)
+# #Фильтры
+# if st.toggle('Фильтр'):
+#     options = st.multiselect(
+#         'Выберите жанры',
+#         ['Боевик','Приключения','Фэнтези','Драма','Фантастика','Криминал','Комедия',
+#         'Триллер','Семейные','Детектив','Ужасы','История','Документальный',
+#         'Мюзикл','Биография','Военный','Спорт','Вестерн','Сериалы','Мультфильмы'])
+#     # Добавить selectbox для выбора конкретного года
+#     target_set = set(options)
 
-# фильтруем DataFrame
-    if len(options) != 0:
+# # фильтруем DataFrame
+#     if len(options) != 0:
         
-        df = df[df['genres'].apply(lambda x: target_set.issubset(set(x.replace(' ','').split(','))))].reset_index()
-        if len(df) == 0:
-            st.title('По заданым параметрам ничего не найдено ((')
-        else:  
-            embeddings = model.encode(df["description"])
-            index = faiss.IndexFlatIP(embeddings.shape[1])
-            index.add(embeddings)    
+#         df = df[df['genres'].apply(lambda x: target_set.issubset(set(x.replace(' ','').split(','))))].reset_index()
+#         if len(df) == 0:
+#             st.title('По заданым параметрам ничего не найдено ((')
+#         else:  
+#             embeddings = model.encode(df["description"])
+#             index = faiss.IndexFlatIP(embeddings.shape[1])
+#             index.add(embeddings)    
     
-    years = list(range(1937, 2024))  # Список всех возможных лет
-    year = sorted(st.multiselect('Выберите год:', years, max_selections= 2))
+#     years = list(range(1937, 2024))  # Список всех возможных лет
+#     year = sorted(st.multiselect('Выберите год:', years, max_selections= 2))
     
-    if len(year) == 2:
-        df = df[(df['year'] >= year[0]) & (df['year'] <= year[1]) ].reset_index()
-        if len(df) == 0:
-            st.title('По заданым параметрам ничего не найдено ((')
-        else:
-            embeddings = model.encode(df["description"])
-            index = faiss.IndexFlatIP(embeddings.shape[1])
-            index.add(embeddings)
-    elif len(year) ==1:
-        df = df[df['year'] == year[0]].reset_index()
+#     if len(year) == 2:
+#         df = df[(df['year'] >= year[0]) & (df['year'] <= year[1]) ].reset_index()
+#         if len(df) == 0:
+#             st.title('По заданым параметрам ничего не найдено ((')
+#         else:
+#             embeddings = model.encode(df["description"])
+#             index = faiss.IndexFlatIP(embeddings.shape[1])
+#             index.add(embeddings)
+#     elif len(year) ==1:
+#         df = df[df['year'] == year[0]].reset_index()
         
-        if len(df) == 0:
-            st.title('По заданым параметрам ничего не найдено ((') 
-        else:  
-            embeddings = model.encode(df["description"])
-            index = faiss.IndexFlatIP(embeddings.shape[1])
-            index.add(embeddings)
+#         if len(df) == 0:
+#             st.title('По заданым параметрам ничего не найдено ((') 
+#         else:  
+#             embeddings = model.encode(df["description"])
+#             index = faiss.IndexFlatIP(embeddings.shape[1])
+#             index.add(embeddings)
 
 
 if len(df) !=0 :
