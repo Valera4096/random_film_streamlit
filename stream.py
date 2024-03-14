@@ -9,11 +9,11 @@ from io import BytesIO
 from sentence_transformers import SentenceTransformer, util
 import faiss
 
+import ast
+
 st.markdown(f'<p style="background-color: white; color: black; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
 
-
-
-df = pd.read_csv('movies.csv')
+df = pd.read_csv("movies_data.csv")
 
 @st.cache_resource
 def load_model():
@@ -21,12 +21,14 @@ def load_model():
 model = load_model()
         
 @st.cache_resource
-def load_vector():
-    return model.encode(df["description"])
-embeddings = load_vector()
+def load_embeddings():
+    return np.load('embeding.npy')
+embeddings = load_embeddings()
+
 
 index = faiss.IndexFlatIP(embeddings.shape[1])
-index.add(embeddings)
+index.add(np.array(embeddings))
+
 
 # Функция для поиска фильмов по сходству
 def find_similar_movies(user_input, top_n=5):
@@ -34,23 +36,6 @@ def find_similar_movies(user_input, top_n=5):
     user_input = user_input.reshape(1,-1)
     distances, indices = index.search(user_input, top_n)
     return list(indices[0])
-
-#Функция отображения результатов подбора
-# def display_movie(i):
-#     st.title('Название фильма:')
-#     st.header(df['movie_title'][i])
-#     st.subheader('Год: ' + str(df['year'][i]))
-#     st.image('http://'+ df['img_url'][i])
-#     st.title('Описание:')
-#     st.write(df['description'][i])
-#     st.title('Жанр:')
-#     st.write("Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i] ) 
-#     st.title('Оценка')
-#     imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
-#     kinopoisk = 'Нет оценки' if df['kinopoisk'][i] == 0 else str(df['kinopoisk'][i])
-#     st.write(f'Рейтинг imdb: {imb}')
-#     st.write(f'Рейтинг кинопоиск: {kinopoisk}')
-#     st.title('-'*45)
 
 
 def display_movie(i):    
@@ -61,8 +46,8 @@ def display_movie(i):
     genre_movie = "Нет данных" if pd.isna(df['genres'].iloc[i]) else df['genres'][i]
     imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
     end = '_'*28
-    write_movie  = f'''<div style="background-color:white; color: black; font-size: 50px; padding: 15px; margin-bottom: 0px;>
-        <p style= "font-size: 40px; font-weight: bold; text-align:">Название фильма:</p>
+    write_movie  = f'''<div style="background-color:white; color: black; font-size: 35px; padding: 15px; margin-bottom: 0px;>
+        <p style= "font-size: 25px; font-weight: bold; text-align:">Название фильма:</p>
         <p style= "font-size: 35px; font-weight: bold; text-align:">{movie_titl}</p>
         <img src="{imges}"width="250" height="400">
         <p style="font-size: 20px; font-weight: bold; text-align:">Год: {year_movie}</p>
@@ -91,47 +76,61 @@ st.markdown(f"""
     """, unsafe_allow_html=True)
 
 
-# #Фильтры
-# if st.toggle('Фильтр'):
-#     options = st.multiselect(
-#         'Выберите жанры',
-#         ['Боевик','Приключения','Фэнтези','Драма','Фантастика','Криминал','Комедия',
-#         'Триллер','Семейные','Детектив','Ужасы','История','Документальный',
-#         'Мюзикл','Биография','Военный','Спорт','Вестерн','Сериалы','Мультфильмы'])
-#     # Добавить selectbox для выбора конкретного года
-#     target_set = set(options)
+#Фильтры
+if st.toggle('Фильтр'):
+    options = st.multiselect(
+        'Выберите жанры',
+        ['триллер','боевик','драма','комедия','мелодрама','комедия','детектив','криминал','боевик',
+         'фантастика','фэнтези','детский','семейный','фантастика', 
+            'короткометражный','детектив','мелодрама','драма','триллер','мультфильмы',
+            'приключения','короткометражный,','мультфильмы','приключения',
+            'семейный','документальный','ужасы','биография','криминал,','документальный','исторический',
+            'аниме','вестерн','ужасы','спорт',
+            'музыкальный','военный','мюзикл','исторический','биография','вестерн','мюзикл',
+            'военный','музыкальный','детский','эротика','фэнтези','аниме'])
+    target_set = set(options)
 
-# # фильтруем DataFrame
-#     if len(options) != 0:
-        
-#         df = df[df['genres'].apply(lambda x: target_set.issubset(set(x.replace(' ','').split(','))))].reset_index()
-#         if len(df) == 0:
-#             st.title('По заданым параметрам ничего не найдено ((')
-#         else:  
-#             embeddings = model.encode(df["description"])
-#             index = faiss.IndexFlatIP(embeddings.shape[1])
-#             index.add(embeddings)    
+# фильтруем DataFrame
+    if len(options) != 0:
+            
+        df = df[df['genres'].apply(lambda x: target_set.issubset(x.split(', ')))].reset_index(drop= True)
+        if len(df) == 0:
+            st.title('По заданым параметрам ничего не найдено ((')
+        else:
+            filterd_embeddings = embeddings[np.array(df.index)]  
+            # создаем индекс Faiss
+            index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
+            # добавляем вектора вложений в индекс Faiss
+            index.add(filterd_embeddings)
+            
+            
+            
     
-#     years = list(range(1937, 2024))  # Список всех возможных лет
-#     year = sorted(st.multiselect('Выберите год:', years, max_selections= 2))
+    years = list(range(1937, 2024))  # Список всех возможных лет
+    year = sorted(st.multiselect('Выберите год:', years, max_selections= 2))
     
-#     if len(year) == 2:
-#         df = df[(df['year'] >= year[0]) & (df['year'] <= year[1]) ].reset_index()
-#         if len(df) == 0:
-#             st.title('По заданым параметрам ничего не найдено ((')
-#         else:
-#             embeddings = model.encode(df["description"])
-#             index = faiss.IndexFlatIP(embeddings.shape[1])
-#             index.add(embeddings)
-#     elif len(year) ==1:
-#         df = df[df['year'] == year[0]].reset_index()
+    if len(year) == 2:
+        df = df[(df['year'] >= year[0]) & (df['year'] <= year[1])].reset_index(drop= True)
+        if len(df) == 0:
+            st.title('По заданым параметрам ничего не найдено ((')
+        else:
+            filterd_embeddings = embeddings[np.array(df.index)]  
+            # создаем индекс Faiss
+            index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
+            # добавляем вектора вложений в индекс Faiss
+            index.add(filterd_embeddings)
+    elif len(year) ==1:
+        df = df[df['year'] >= year[0]]
         
-#         if len(df) == 0:
-#             st.title('По заданым параметрам ничего не найдено ((') 
-#         else:  
-#             embeddings = model.encode(df["description"])
-#             index = faiss.IndexFlatIP(embeddings.shape[1])
-#             index.add(embeddings)
+        if len(df) == 0:
+            st.title('По заданым параметрам ничего не найдено ((') 
+        else:  
+            filterd_embeddings = embeddings[np.array(df.index)]  
+            # создаем индекс Faiss
+            index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
+            # добавляем вектора вложений в индекс Faiss
+            index.add(filterd_embeddings)
+
 
 
 if len(df) !=0 :
