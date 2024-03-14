@@ -13,7 +13,7 @@ import ast
 
 st.markdown(f'<p style="background-color: white; color: black; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
 
-df = pd.read_csv("movies_data.csv")
+df = pd.read_csv("movies.csv")
 
 @st.cache_resource
 def load_model():
