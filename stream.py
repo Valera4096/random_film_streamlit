@@ -6,14 +6,12 @@ from PIL import Image
 import base64
 from io import BytesIO
 
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
 import faiss
 
-import ast
+st.markdown(f'<p style="background-color:  grey ; color: white ; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
 
-st.markdown(f'<p style="background-color: white; color: black; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
-
-df = pd.read_csv("movies.csv")
+df = pd.read_csv("/home/valera/ds_bootcamp/ds-phase-2/11-nn-ext/progect/movies_data.csv")
 
 @st.cache_resource
 def load_model():
@@ -22,7 +20,7 @@ model = load_model()
         
 @st.cache_resource
 def load_embeddings():
-    return np.load('embeding.npy')
+    return np.load('/home/valera/ds_bootcamp/ds-phase-2/11-nn-ext/progect/embeding.npy')
 embeddings = load_embeddings()
 
 
@@ -60,7 +58,7 @@ def display_movie(i):
 
 
 # Загрузить изображение из файла
-img = Image.open('_-fotor.jpg')
+img = Image.open('/home/valera/ds_bootcamp/ds-phase-2/11-nn-ext/progect/_-fotor.jpg')
 buffered = BytesIO()
 img.save(buffered, format="JPEG")
 img_str = base64.b64encode(buffered.getvalue()).decode()
@@ -78,7 +76,7 @@ st.markdown(f"""
 
 #Фильтры
 if st.toggle('Фильтр'):
-    options = st.multiselect(
+    options = st.sidebar.multiselect(
         'Выберите жанры',
         ['триллер','боевик','драма','комедия','мелодрама','комедия','детектив','криминал','боевик',
          'фантастика','фэнтези','детский','семейный','фантастика', 
@@ -104,32 +102,34 @@ if st.toggle('Фильтр'):
             index.add(filterd_embeddings)
             
             
-            
+    st.sidebar.header('Выбор дат')        
+    year_min = st.sidebar.slider("Выбор минимального года:", min_value=1937, max_value=2022, value=2015)
+    year_max = st.sidebar.slider("Выбор максимального года:", min_value=year_min, max_value=2024, value=2020)
     
-    years = list(range(1937, 2024))  # Список всех возможных лет
-    year = sorted(st.multiselect('Выберите год:', years, max_selections= 2))
+    # years = list(range(1937, 2024))  # Список всех возможных лет
+    # year = sorted(st.multiselect('Выберите год:', years, max_selections= 2))
     
-    if len(year) == 2:
-        df = df[(df['year'] >= year[0]) & (df['year'] <= year[1])].reset_index(drop= True)
-        if len(df) == 0:
-            st.title('По заданым параметрам ничего не найдено ((')
-        else:
-            filterd_embeddings = embeddings[np.array(df.index)]  
-            # создаем индекс Faiss
-            index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
-            # добавляем вектора вложений в индекс Faiss
-            index.add(filterd_embeddings)
-    elif len(year) ==1:
-        df = df[df['year'] >= year[0]].reset_index(drop= True)
+#    if len(year) == 2:
+    df = df[(df['year'] >= year_min) & (df['year'] <= year_max)].reset_index(drop= True)
+    if len(df) == 0:
+        st.title('По заданым параметрам ничего не найдено ((')
+    else:
+        filterd_embeddings = embeddings[np.array(df.index)]  
+        # создаем индекс Faiss
+        index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
+        # добавляем вектора вложений в индекс Faiss
+        index.add(filterd_embeddings)
+#    elif len(year) ==1:
+        # df = df[df['year'] >= year[0]].reset_index(drop= True)
         
-        if len(df) == 0:
-            st.title('По заданым параметрам ничего не найдено ((') 
-        else:  
-            filterd_embeddings = embeddings[np.array(df.index)]  
-            # создаем индекс Faiss
-            index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
-            # добавляем вектора вложений в индекс Faiss
-            index.add(filterd_embeddings)
+        # if len(df) == 0:
+        #     st.title('По заданым параметрам ничего не найдено ((') 
+        # else:  
+        #     filterd_embeddings = embeddings[np.array(df.index)]  
+        #     # создаем индекс Faiss
+        #     index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
+        #     # добавляем вектора вложений в индекс Faiss
+        #     index.add(filterd_embeddings)
 
 
 
@@ -159,3 +159,5 @@ if len(df) !=0 :
             display_movie(i)
             
             
+
+
