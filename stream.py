@@ -11,7 +11,7 @@ import faiss
 
 st.markdown(f'<p style="background-color: #262730; color: white ; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
 
-df = pd.read_csv("/home/valera/ds_bootcamp/ds-phase-2/11-nn-ext/progect/movies_data.csv")
+df = pd.read_csv("movies.csv")
 
 @st.cache_resource
 def load_model():
@@ -20,7 +20,7 @@ model = load_model()
         
 @st.cache_resource
 def load_embeddings():
-    return np.load('/home/valera/ds_bootcamp/ds-phase-2/11-nn-ext/progect/embeding.npy')
+    return np.load('embeding.npy')
 embeddings = load_embeddings()
 
 
@@ -65,7 +65,7 @@ def display_movie(i):
 
 
 # Загрузить изображение из файла
-img = Image.open('/home/valera/ds_bootcamp/ds-phase-2/11-nn-ext/progect/_-fotor.jpg')
+img = Image.open('_-fotor.jpg')
 buffered = BytesIO()
 img.save(buffered, format="JPEG")
 img_str = base64.b64encode(buffered.getvalue()).decode()
