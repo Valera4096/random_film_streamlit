@@ -150,11 +150,8 @@ st.markdown(
 # Фильтры
 if st.sidebar.toggle("Фильтр"):
     st.sidebar.header("Выбор дат")
-    year_min = st.sidebar.slider(
-        "Выбор минимального года:", min_value=1937, max_value=2022, value=2015
-    )
-    year_max = st.sidebar.slider(
-        "Выбор максимального года:", min_value=year_min, max_value=2024, value=2020
+    year_min, year_max = st.sidebar.slider(
+        "Выбор  года:", min_value=1960, max_value=2024, value=(1960,2024)
     )
 
     options = st.sidebar.multiselect(
@@ -220,16 +217,19 @@ if st.sidebar.toggle("Фильтр"):
         df = df[(df["year"] >= year_min) & (df["year"] <= year_max)].reset_index(
             drop=True
         )
-
-        if len(options) != 0:
-            df = df[
-                df["genres"].apply(lambda x: target_set.issubset(x.split(", ")))
-            ].reset_index(drop=True)
-
-        if len(actors_set) != 0:
-            df = df[
-                df["actors"].apply(lambda x: actors_set.issubset(x.split(", ")))
-            ].reset_index(drop=True)
+        try:        
+            if len(options) != 0:
+                df = df[
+                    df["genres"].apply(lambda x: target_set.issubset(x.split(", ")))
+                ].reset_index(drop=True)
+            
+            if len(actors_set) != 0:
+                df = df[
+                    df["actors"].apply(lambda x: actors_set.issubset(x.split(", ")))
+                ].reset_index(drop=True)
+        except KeyError:
+            pass
+            
 
 if len(df) != 0:
 
@@ -277,3 +277,5 @@ if len(df) != 0:
         for i in random_digits:
             display_movie(i)
             st.markdown(f'<p style="text-align: center;"></p>', unsafe_allow_html=True)
+else:
+    st.title('По заданым параметрам ничего не найдено ((')
