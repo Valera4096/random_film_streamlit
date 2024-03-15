@@ -13,7 +13,7 @@ import pickle
 
 st.markdown(f'<p style="background-color: #262730; color: white ; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
 
-df = pd.read_csv("/resources/movies.csv")
+df = pd.read_csv("resources/movies.csv")
 
 @st.cache_resource
 def load_model():
@@ -22,12 +22,12 @@ model = load_model()
         
 @st.cache_resource
 def load_embeddings():
-    return np.load('/resources/embeding.npy')
+    return np.load('resources/embeding.npy')
 embeddings = load_embeddings()
 
 @st.cache_resource
 def load_lst():    
-    with open('/resources/lst_actor.pkl', 'rb') as f:
+    with open('resources/lst_actor.pkl', 'rb') as f:
         lst_actor_loaded = pickle.load(f)
     return lst_actor_loaded
 
@@ -77,7 +77,7 @@ def display_movie(i):
 
 
 # Загрузить изображение из файла
-img = Image.open('/resources/_-fotor.jpg')
+img = Image.open('resources/_-fotor.jpg')
 buffered = BytesIO()
 img.save(buffered, format="JPEG")
 img_str = base64.b64encode(buffered.getvalue()).decode()
