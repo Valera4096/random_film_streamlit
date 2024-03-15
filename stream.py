@@ -12,6 +12,11 @@ import faiss
 import pickle
 
 st.markdown(f'<p style="background-color: #262730; color: white ; font-size: 40px; font-weight: bold; text-align:">Умный поиск фильмов</p>', unsafe_allow_html=True)
+Top_K = st.sidebar.slider('Количество рекомендаций?', 1, 10, 3 )
+title = st.text_input('Что хотите посмотреть сегодня?')
+len_title = len(title.split(' '))
+min_svd = 10 
+
 
 df = pd.read_csv("resources/movies.csv")
 
@@ -24,18 +29,23 @@ model = load_model()
 def load_embeddings():
     return np.load('resources/embeding.npy')
 embeddings = load_embeddings()
+index = faiss.IndexFlatIP(embeddings.shape[1])
+index.add(embeddings)
 
 @st.cache_resource
 def load_lst():    
     with open('resources/lst_actor.pkl', 'rb') as f:
         lst_actor_loaded = pickle.load(f)
     return lst_actor_loaded
-
 lst_actor_loaded = load_lst()
 
+@st.cache_resource
+def load_reduced_embeddings(): 
+    return np.load('resources/reduced_embeddings.npy')
+reduced_embeddings = load_reduced_embeddings()
+reduced_index = faiss.IndexFlatIP(reduced_embeddings.shape[1])
+reduced_index.add(reduced_embeddings)
 
-index = faiss.IndexFlatIP(embeddings.shape[1])
-index.add(embeddings)
 
 
 # Функция для поиска фильмов по сходству
@@ -44,6 +54,32 @@ def find_similar_movies(user_input, top_n=5):
     user_input = user_input.reshape(1,-1)
     distances, indices = index.search(user_input, top_n)
     return list(indices[0])
+
+# Функция для поиска фильмов по сходству с SVD
+def find_similar_movies_svd(input, n = 5 , num_components = 25):
+    
+    user_input = model.encode(input)                                               
+    user_input = user_input.reshape(1, -1)                                            
+    U_reduced, S_reduced, Vt_reduced = np.linalg.svd(user_input, full_matrices=False) 
+                                                                                    
+    U_reduced = U_reduced[:, :num_components]                                         
+    S_reduced = np.diag(S_reduced[:num_components])                                   
+    V_reduced = Vt_reduced[:num_components, :]                                        
+                                                                                
+    reduced_user_input = np.dot(U_reduced, np.dot(S_reduced, V_reduced))              
+    _, index = reduced_index.search(reduced_user_input, n)                      
+    return index[0]
+
+def create_faiss_index(embeddings, df, len_title, min_svd = min_svd):
+    if len_title < min_svd:
+        filterd_embeddings = embeddings[np.array(df.index)]
+        reduced_index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
+        reduced_index.add(filterd_embeddings)        
+    else:    
+        filterd_embeddings = embeddings[np.array(df.index)]
+        index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
+        index.add(filterd_embeddings)
+    return reduced_index if len_title < min_svd else index
 
 
 def display_movie(i):    
@@ -56,7 +92,7 @@ def display_movie(i):
     imb = 'Нет оценки' if df['imdb'][i] == 0 else str(df['imdb'][i])
     end = '_'*37
     write_movie = f'''
-    <div style="background-color: white; color: black; font-size: 35px; padding: 15px; margin-bottom: 0px; display: flex;">
+    <div style="background-color: white; color: black; font-size: 35px; padding: 15px; margin-bottom: 0px; display: flex; opacity: 0.8;">
         <div style="margin-right: 20px;">
             <img src="{imges}" width="200" height="350">
         </div>
@@ -123,9 +159,10 @@ if st.sidebar.toggle('Фильтр'):
         if len(df) == 0:
             st.title('По заданым параметрам ничего не найдено ((')
         else:
-            filterd_embeddings = embeddings[np.array(df.index)]  
-            index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
-            index.add(filterd_embeddings)    
+            if len_title < 10:
+                    reduced_index = create_faiss_index(reduced_embeddings, df, len_title)
+            else:
+                index = create_faiss_index(embeddings, df, len_title)    
             
         if len(options) != 0:
                 
@@ -133,39 +170,47 @@ if st.sidebar.toggle('Фильтр'):
             if len(df) == 0:
                 st.title('По заданым параметрам ничего не найдено ((')
             else:
-                filterd_embeddings = embeddings[np.array(df.index)]  
-                # создаем индекс Faiss
-                index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
-                # добавляем вектора вложений в индекс Faiss
-                index.add(filterd_embeddings)
+                if len_title < 10:
+                    reduced_index = create_faiss_index(reduced_embeddings, df, len_title)
+                else:
+                    index = create_faiss_index(embeddings, df, len_title)
         
         if len(actors_set) != 0:
             df = df[df['actors'].apply(lambda x: actors_set.issubset(x.split(', ')))].reset_index()
             if len(df) == 0:
                 st.title('По заданым параметрам ничего не найдено ((')
             else:
-                filterd_embeddings = embeddings[np.array(df.index)]  
-                index = faiss.IndexFlatIP(filterd_embeddings.shape[1])
-                index.add(filterd_embeddings)        
+                if len_title < 10:
+                    reduced_index = create_faiss_index(reduced_embeddings, df, len_title)
+                else:
+                    index = create_faiss_index(embeddings, df, len_title)
         
+                
         
-        
-
-
 if len(df) !=0 :
-    # Создать текстовое поле для ввода названия фильма
-    title = st.text_input('Что хотите посмотреть сегодня?')
-    Top_K = st.sidebar.slider('Количество рекомендаций?', 1, 10, 3 )
     
-    if st.button('Подобрать фильм'):
-        # Использование функции
-        similar_movies = find_similar_movies(title,Top_K)
-        for i in similar_movies:
-            if i == -1:
-                st.title('Больше рекомендаций нет, уменьшите количество рекомендаций или измените фильтры')
-                break
-            else:
-                display_movie(i)
+    if st.button('Подобрать фильм'):   
+        if len_title < min_svd:
+            # Использование функции
+            similar_movies = find_similar_movies_svd(title,n = Top_K)
+            for i in similar_movies:
+                if i == -1:
+                    st.title('Больше рекомендаций нет, уменьшите количество рекомендаций или измените фильтры')
+                    break
+                else:
+                    display_movie(i)
+                    st.title('Это обработано через SVD')        
+                        
+        else:
+            # Использование функции
+            similar_movies = find_similar_movies(title,Top_K)
+            for i in similar_movies:
+                if i == -1:
+                    st.title('Больше рекомендаций нет, уменьшите количество рекомендаций или измените фильтры')
+                    break
+                else:
+                    display_movie(i)
+                    st.title('Это просто синусное сходство') 
 
     if st.button('Выбрать случайно'):
         size = 5
